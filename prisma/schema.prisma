@@ -1,0 +1,272 @@
+// Prisma schema for AI Learning Platform
+// This schema supports concept graphs, user profiling, and adaptive learning
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model (extends Supabase auth)
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  name          String?
+  avatarUrl     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Learning preferences
+  learningStyle String?   // visual, verbal, kinesthetic
+  depthPreference String? @default("balanced") // surface, balanced, deep
+  pacePreference  String? @default("moderate") // slow, moderate, fast
+  
+  // Relations
+  profiles      UserProfile[]
+  sessions      LearningSession[]
+  assessments   Assessment[]
+  notes         Note[]
+  reflections   Reflection[]
+  
+  @@map("users")
+}
+
+// Subject/domain (e.g., Mathematics, Physics, Computer Science)
+model Subject {
+  id          String     @id @default(uuid())
+  name        String     @unique
+  description String?
+  icon        String?
+  createdAt   DateTime   @default(now())
+  
+  concepts    Concept[]
+  
+  @@map("subjects")
+}
+
+// Concept node in knowledge graph
+model Concept {
+  id          String   @id @default(uuid())
+  subjectId   String
+  subject     Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  
+  // Core metadata
+  title       String
+  slug        String
+  description String?
+  
+  // Pedagogical content
+  intuition   String?  // Intuitive explanation
+  mentalModel String?  // Mental model description
+  formalDef   String?  // Formal definition
+  applications String? // Real-world applications
+  commonMisconceptions String? // JSON array of misconceptions
+  
+  // Graph structure
+  prerequisites ConceptPrerequisite[] @relation("Prerequisite")
+  dependents    ConceptPrerequisite[] @relation("Dependent")
+  
+  // Embedding for similarity search (stored as JSON array)
+  embedding    Json?
+  
+  // Metadata
+  difficulty   Float    @default(1.0) // 0.0 (easy) to 5.0 (expert)
+  estimatedTime Int?    // minutes
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // Relations
+  profiles     UserProfile[]
+  sessions     LearningSession[]
+  assessments  Assessment[]
+  questions    Question[]
+  
+  @@unique([subjectId, slug])
+  @@index([subjectId])
+  @@map("concepts")
+}
+
+// Join table for concept prerequisites (many-to-many self-relation)
+model ConceptPrerequisite {
+  prerequisiteId String
+  prerequisite   Concept @relation("Prerequisite", fields: [prerequisiteId], references: [id], onDelete: Cascade)
+  
+  dependentId    String
+  dependent      Concept @relation("Dependent", fields: [dependentId], references: [id], onDelete: Cascade)
+  
+  createdAt      DateTime @default(now())
+  
+  @@id([prerequisiteId, dependentId])
+  @@index([dependentId])
+  @@map("concept_prerequisites")
+}
+
+// User's mastery profile for each concept
+model UserProfile {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conceptId   String
+  concept     Concept  @relation(fields: [conceptId], references: [id], onDelete: Cascade)
+  
+  // Mastery metrics
+  masteryScore Float   @default(0.0) // 0.0 to 1.0
+  confidence   Float   @default(0.0) // 0.0 to 1.0
+  attempts     Int     @default(0)
+  correctCount Int     @default(0)
+  
+  // Learning velocity
+  timeSpent   Int      @default(0) // minutes
+  lastStudied DateTime?
+  
+  // Mistake patterns (JSON: { errorType: count })
+  mistakePatterns Json?
+  
+  // Confusion signals
+  confusionCount Int   @default(0)
+  hesitationCount Int  @default(0)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([userId, conceptId])
+  @@index([userId])
+  @@index([conceptId])
+  @@map("user_profiles")
+}
+
+// Learning session (chat with AI tutor)
+model LearningSession {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conceptId   String?
+  concept     Concept? @relation(fields: [conceptId], references: [id], onDelete: SetNull)
+  
+  title       String?
+  startedAt   DateTime @default(now())
+  endedAt     DateTime?
+  
+  messages    SessionMessage[]
+  
+  @@index([userId])
+  @@map("learning_sessions")
+}
+
+// Messages in a learning session
+model SessionMessage {
+  id          String   @id @default(uuid())
+  sessionId   String
+  session     LearningSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  role        String   // "user" | "assistant" | "system"
+  content     String
+  metadata    Json?    // Additional context (reasoning attempts, hints given, etc.)
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([sessionId])
+  @@map("session_messages")
+}
+
+// Assessment/quiz
+model Assessment {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conceptId   String
+  concept     Concept  @relation(fields: [conceptId], references: [id], onDelete: Cascade)
+  
+  type        String   // "conceptual" | "application" | "reasoning"
+  score       Float?
+  maxScore    Float?
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  
+  responses   AssessmentResponse[]
+  
+  @@index([userId])
+  @@index([conceptId])
+  @@map("assessments")
+}
+
+// Questions in assessments
+model Question {
+  id          String   @id @default(uuid())
+  conceptId   String
+  concept     Concept  @relation(fields: [conceptId], references: [id], onDelete: Cascade)
+  
+  type        String   // "multiple_choice" | "open_ended" | "reasoning"
+  prompt      String
+  options     Json?    // For multiple choice
+  correctAnswer Json?  // Answer key
+  explanation String?
+  difficulty  Float    @default(1.0)
+  
+  createdAt   DateTime @default(now())
+  
+  responses   AssessmentResponse[]
+  
+  @@index([conceptId])
+  @@map("questions")
+}
+
+// User's response to a question
+model AssessmentResponse {
+  id          String   @id @default(uuid())
+  assessmentId String
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  questionId   String
+  question     Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  
+  answer      Json     // User's answer
+  isCorrect   Boolean?
+  score       Float?
+  feedback    String?
+  misconceptionDetected String? // Type of misconception if any
+  
+  answeredAt  DateTime @default(now())
+  
+  @@index([assessmentId])
+  @@index([questionId])
+  @@map("assessment_responses")
+}
+
+// User notes
+model Note {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conceptId   String?
+  
+  title       String
+  content     String
+  tags        String[] @default([])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([userId])
+  @@map("notes")
+}
+
+// Reflection entries (Feynman technique)
+model Reflection {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conceptId   String?
+  
+  content     String   // What did I learn? Can I explain it simply?
+  gaps        String[] @default([]) // Identified gaps
+  confidence  Float    @default(0.0)
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([userId])
+  @@map("reflections")
+}
+
