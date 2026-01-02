@@ -1,11 +1,10 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import SignInForm from '@/components/SignInForm';
+import SignUpForm from '@/components/SignUpForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ThemeToggle } from '@/components/theme-toggle';
-import Link from 'next/link';
 
-export default async function SignInPage() {
+export default async function SignUpPage() {
   const supabase = createServerClient();
   const {
     data: { user },
@@ -39,17 +38,11 @@ export default async function SignInPage() {
             <CardTitle className="text-2xl font-mono">[SYSTEM_AUTH]</CardTitle>
           </div>
           <CardDescription className="font-mono text-xs">
-            [AUTHENTICATE_USER]
+            [REGISTER_NEW_USER]
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <SignInForm />
-          <div className="mt-4 text-center text-sm">
-            <span className="text-muted-foreground font-mono">[NEW_USER?] </span>
-            <Link href="/auth/signup" className="text-primary hover:underline font-mono">
-              [REGISTER]
-            </Link>
-          </div>
+          <SignUpForm />
         </CardContent>
       </Card>
     </div>

@@ -6,6 +6,7 @@ import { masteryColor, masteryBgColor } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default async function Dashboard() {
   const supabase = createServerClient();
@@ -60,6 +61,7 @@ export default async function Dashboard() {
               </Link>
             </div>
             <div className="flex items-center gap-4">
+              <ThemeToggle />
               <span className="text-foreground">{userRecord.name || userRecord.email}</span>
               <form action="/auth/signout" method="post">
                 <Button

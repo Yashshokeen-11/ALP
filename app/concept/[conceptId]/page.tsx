@@ -10,6 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default async function ConceptPage({
   params,
@@ -64,6 +65,7 @@ export default async function ConceptPage({
                 </Link>
               </Button>
             </div>
+            <ThemeToggle />
           </div>
         </div>
       </nav>

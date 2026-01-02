@@ -8,32 +8,46 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
+import Link from 'next/link';
 
-export default function SignInForm() {
+export default function SignUpForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
   const supabase = createClient();
 
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
       });
 
       if (error) throw error;
 
+      // Auto sign in after sign up
+      await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
       router.push('/dashboard');
       router.refresh();
     } catch (error: any) {
-      setError(error.message || 'Failed to sign in');
+      setError(error.message || 'Failed to sign up');
     } finally {
       setLoading(false);
     }
@@ -59,7 +73,7 @@ export default function SignInForm() {
   };
 
   return (
-    <form className="space-y-4" onSubmit={handleSignIn}>
+    <form className="space-y-4" onSubmit={handleSignUp}>
       {error && (
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>
@@ -92,13 +106,33 @@ export default function SignInForm() {
         />
       </div>
 
+      <div className="space-y-2">
+        <Label htmlFor="confirmPassword" className="font-mono text-sm">[CONFIRM_PASSWORD]</Label>
+        <Input
+          id="confirmPassword"
+          type="password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          required
+          placeholder="••••••••"
+          className="font-mono border-2 border-primary/20 focus:border-primary"
+        />
+      </div>
+
       <Button
         type="submit"
         disabled={loading}
         className="w-full font-mono border-2"
       >
-        {loading ? '[PROCESSING...]' : '[AUTHENTICATE]'}
+        {loading ? '[PROCESSING...]' : '[REGISTER_USER]'}
       </Button>
+
+      <div className="text-center text-sm">
+        <span className="text-muted-foreground font-mono">[ALREADY_REGISTERED?] </span>
+        <Link href="/auth/signin" className="text-primary hover:underline font-mono">
+          [SIGN_IN]
+        </Link>
+      </div>
 
       <div className="relative my-6">
         <Separator />

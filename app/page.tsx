@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default async function Home() {
   const supabase = createServerClient();
@@ -14,7 +15,10 @@ export default async function Home() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-background">
+    <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-background relative">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <div className="max-w-4xl w-full text-center">
         <h1 className="text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
           AI Learning Platform
@@ -25,7 +29,7 @@ export default async function Home() {
         </p>
         <div className="flex gap-4 justify-center">
           <Button asChild size="lg">
-            <Link href="/auth/signin">
+            <Link href="/auth/signup">
               Get Started
             </Link>
           </Button>

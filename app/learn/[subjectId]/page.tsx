@@ -8,6 +8,7 @@ import LearningPathView from '@/components/LearningPathView';
 import TutorChat from '@/components/TutorChat';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default async function LearnSubjectPage({
   params,
@@ -48,6 +49,7 @@ export default async function LearnSubjectPage({
               <Separator orientation="vertical" />
               <h1 className="text-xl font-semibold text-foreground">{subject.name}</h1>
             </div>
+            <ThemeToggle />
           </div>
         </div>
       </nav>
