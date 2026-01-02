@@ -117,12 +117,12 @@ export async function POST(request: NextRequest) {
         response = await tutor.generateSocraticQuestion(context, message);
       }
     } else {
-      // General conversation
-      response = {
-        content: 'I\'d be happy to help! Which concept would you like to learn about?',
-        type: 'question',
-        shouldRevealAnswer: true,
-      };
+      // General conversation - answer like a normal chatbot
+      const conversationHistory = history.map((m: any) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+      }));
+      response = await tutor.answerGeneralQuestion(message, conversationHistory);
     }
 
     // Save assistant response

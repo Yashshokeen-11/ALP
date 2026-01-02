@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { masteryColor, masteryBgColor } from '@/lib/utils';
 import LearningPathView from '@/components/LearningPathView';
 import TutorChat from '@/components/TutorChat';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 
 export default async function LearnSubjectPage({
   params,
@@ -33,16 +35,18 @@ export default async function LearnSubjectPage({
   const learningPath = await engine.generateLearningPath(params.subjectId, user.id);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b">
+    <div className="min-h-screen bg-background">
+      <nav className="border-b bg-card">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center gap-4">
-              <Link href="/dashboard" className="text-primary-600 hover:text-primary-700">
-                ← Back to Dashboard
-              </Link>
-              <span className="text-gray-400">|</span>
-              <h1 className="text-xl font-semibold">{subject.name}</h1>
+              <Button variant="ghost" asChild>
+                <Link href="/dashboard">
+                  ← Back to Dashboard
+                </Link>
+              </Button>
+              <Separator orientation="vertical" />
+              <h1 className="text-xl font-semibold text-foreground">{subject.name}</h1>
             </div>
           </div>
         </div>
@@ -51,11 +55,11 @@ export default async function LearnSubjectPage({
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div>
-            <h2 className="text-2xl font-bold mb-4">Learning Path</h2>
+            <h2 className="text-2xl font-bold mb-4 text-foreground">Learning Path</h2>
             <LearningPathView path={learningPath} userId={user.id} />
           </div>
           <div>
-            <h2 className="text-2xl font-bold mb-4">AI Tutor</h2>
+            <h2 className="text-2xl font-bold mb-4 text-foreground">AI Tutor</h2>
             <TutorChat subjectId={params.subjectId} />
           </div>
         </div>

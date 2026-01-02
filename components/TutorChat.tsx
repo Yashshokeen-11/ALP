@@ -1,6 +1,11 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
 function uuidv4() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
     const r = Math.random() * 16 | 0;
@@ -86,48 +91,50 @@ export default function TutorChat({ subjectId, conceptId }: Props) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow flex flex-col h-[600px]">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 && (
-          <div className="text-center text-gray-500 py-8">
-            <p className="mb-2">👋 Start a conversation with your AI tutor!</p>
-            <p className="text-sm">
-              Ask questions, request explanations, or explore concepts.
-            </p>
-          </div>
-        )}
-
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
-            <div
-              className={`max-w-[80%] rounded-lg p-3 ${
-                message.role === 'user'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 text-gray-900'
-              }`}
-            >
-              <p className="whitespace-pre-wrap">{message.content}</p>
+    <Card className="flex flex-col h-[600px]">
+      <ScrollArea className="flex-1 p-4">
+        <div className="space-y-4">
+          {messages.length === 0 && (
+            <div className="text-center text-muted-foreground py-8">
+              <p className="mb-2">👋 Start a conversation with your AI tutor!</p>
+              <p className="text-sm">
+                Ask questions, request explanations, or explore concepts.
+              </p>
             </div>
-          </div>
-        ))}
+          )}
 
-        {loading && (
-          <div className="flex justify-start">
-            <div className="bg-gray-100 rounded-lg p-3">
-              <div className="flex gap-1">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              <div
+                className={`max-w-[80%] rounded-lg p-3 ${
+                  message.role === 'user'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground'
+                }`}
+              >
+                <p className="whitespace-pre-wrap text-sm">{message.content}</p>
               </div>
             </div>
-          </div>
-        )}
+          ))}
 
-        <div ref={messagesEndRef} />
-      </div>
+          {loading && (
+            <div className="flex justify-start">
+              <div className="bg-muted rounded-lg p-3">
+                <div className="flex gap-1">
+                  <Skeleton className="w-2 h-2 rounded-full" />
+                  <Skeleton className="w-2 h-2 rounded-full" style={{ animationDelay: '0.1s' }} />
+                  <Skeleton className="w-2 h-2 rounded-full" style={{ animationDelay: '0.2s' }} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+      </ScrollArea>
 
       <div className="border-t p-4">
         <form
@@ -137,24 +144,23 @@ export default function TutorChat({ subjectId, conceptId }: Props) {
           }}
           className="flex gap-2"
         >
-          <input
+          <Input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask a question or request an explanation..."
-            className="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
             disabled={loading}
+            className="flex-1"
           />
-          <button
+          <Button
             type="submit"
             disabled={loading || !input.trim()}
-            className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Send
-          </button>
+          </Button>
         </form>
       </div>
-    </div>
+    </Card>
   );
 }
 

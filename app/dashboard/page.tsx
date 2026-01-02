@@ -3,6 +3,9 @@ import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db';
 import Link from 'next/link';
 import { masteryColor, masteryBgColor } from '@/lib/utils';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 
 export default async function Dashboard() {
   const supabase = createServerClient();
@@ -44,24 +47,27 @@ export default async function Dashboard() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b">
+    <div className="min-h-screen bg-background">
+      <nav className="border-b bg-card">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <Link href="/dashboard" className="text-xl font-bold text-primary-600">
+              <Link 
+                href="/dashboard" 
+                className="text-xl font-bold text-primary"
+              >
                 ALP
               </Link>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-gray-700">{userRecord.name || userRecord.email}</span>
+              <span className="text-foreground">{userRecord.name || userRecord.email}</span>
               <form action="/auth/signout" method="post">
-                <button
+                <Button
                   type="submit"
-                  className="text-gray-600 hover:text-gray-900"
+                  variant="ghost"
                 >
                   Sign Out
-                </button>
+                </Button>
               </form>
             </div>
           </div>
@@ -69,7 +75,7 @@ export default async function Dashboard() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-3xl font-bold mb-8">Your Learning Dashboard</h1>
+        <h1 className="text-3xl font-bold mb-8 text-foreground">Your Learning Dashboard</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {subjects.map((subject: any) => {
@@ -83,34 +89,34 @@ export default async function Dashboard() {
               <Link
                 key={subject.id}
                 href={`/learn/${subject.id}`}
-                className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition"
               >
-                <h2 className="text-xl font-semibold mb-2">{subject.name}</h2>
-                {subject.description && (
-                  <p className="text-gray-600 text-sm mb-4">{subject.description}</p>
-                )}
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Progress</span>
-                    <span className="font-semibold">
-                      {masteredConcepts}/{totalConcepts} concepts
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-primary-600 h-2 rounded-full transition-all"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                </div>
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                  <CardHeader>
+                    <CardTitle>{subject.name}</CardTitle>
+                    {subject.description && (
+                      <CardDescription>{subject.description}</CardDescription>
+                    )}
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Progress</span>
+                        <span className="font-semibold text-foreground">
+                          {masteredConcepts}/{totalConcepts} concepts
+                        </span>
+                      </div>
+                      <Progress value={progress} className="h-2" />
+                    </div>
+                  </CardContent>
+                </Card>
               </Link>
             );
           })}
 
           {subjects.length === 0 && (
             <div className="col-span-full text-center py-12">
-              <p className="text-gray-500 mb-4">No subjects available yet.</p>
-              <p className="text-sm text-gray-400">
+              <p className="text-muted-foreground mb-4">No subjects available yet.</p>
+              <p className="text-sm text-muted-foreground">
                 Subjects will appear here once they're added to the platform.
               </p>
             </div>

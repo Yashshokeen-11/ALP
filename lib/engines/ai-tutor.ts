@@ -54,6 +54,8 @@ export class AITutorEngine {
     } else if (geminiApiKey) {
       this.apiProvider = 'gemini';
       this.gemini = new GoogleGenerativeAI(geminiApiKey);
+      // Log API key status (first few chars only for security)
+      console.log('Gemini API initialized with key:', geminiApiKey.substring(0, 10) + '...');
     } else if (openaiApiKey) {
       this.apiProvider = 'openai';
       this.openai = new OpenAI({ apiKey: openaiApiKey });
@@ -102,7 +104,7 @@ export class AITutorEngine {
       }
     } else if (this.apiProvider === 'gemini' && this.gemini) {
       try {
-        const model = this.gemini.getGenerativeModel({ model: 'gemini-pro' });
+        const model = this.gemini.getGenerativeModel({ model: 'gemini-2.5-pro-preview' });
         const geminiMessages = this.convertToGeminiFormat(messages);
         const result = await model.generateContent({
           contents: geminiMessages,
@@ -177,7 +179,7 @@ export class AITutorEngine {
       }
     } else if (this.apiProvider === 'gemini' && this.gemini) {
       try {
-        const model = this.gemini.getGenerativeModel({ model: 'gemini-pro' });
+        const model = this.gemini.getGenerativeModel({ model: 'gemini-2.5-pro-preview' });
         const geminiMessages = this.convertToGeminiFormat(messages);
         const result = await model.generateContent({
           contents: geminiMessages,
@@ -264,7 +266,7 @@ export class AITutorEngine {
       }
     } else if (this.apiProvider === 'gemini' && this.gemini) {
       try {
-        const model = this.gemini.getGenerativeModel({ model: 'gemini-pro' });
+        const model = this.gemini.getGenerativeModel({ model: 'gemini-2.5-pro-preview' });
         const geminiMessages = this.convertToGeminiFormat(messages);
         const result = await model.generateContent({
           contents: geminiMessages,
@@ -510,6 +512,121 @@ STYLE:
     }
 
     return geminiMessages;
+  }
+
+  /**
+   * Answer general questions (like a normal chatbot)
+   * This is used when no specific concept is selected
+   */
+  async answerGeneralQuestion(
+    question: string,
+    conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }>
+  ): Promise<TutorResponse> {
+    console.log('answerGeneralQuestion called, apiProvider:', this.apiProvider);
+    const messages = [
+      {
+        role: 'system' as const,
+        content: 'You are a helpful AI tutor. Answer questions clearly and helpfully. Be educational and encourage learning. If asked about a topic, provide a clear explanation.',
+      },
+      ...conversationHistory,
+      {
+        role: 'user' as const,
+        content: question,
+      },
+    ];
+
+    let content = '';
+
+    if (this.apiProvider === 'huggingface' && this.hf) {
+      try {
+        const response = await this.hf.chatCompletion({
+          model: 'meta-llama/Llama-2-70b-chat-hf',
+          messages: messages as any,
+          temperature: 0.7,
+          max_tokens: 1000,
+        });
+        content = response.choices[0]?.message?.content ?? '';
+      } catch (error: any) {
+        console.error('Hugging Face API error:', error);
+        content = 'I apologize, but I\'m having trouble connecting to the AI service right now. Please try again later.';
+      }
+    } else if (this.apiProvider === 'gemini' && this.gemini) {
+      // Try different model names in order of preference
+      // Updated with actual model names available in Google AI Studio
+      // Models available in your Google AI Studio account
+      const modelsToTry = [
+        'gemini-2.5-pro-preview',  // Gemini 2.5 Pro Preview (highlighted in your account)
+        'gemini-2.5-flash',        // Gemini 2.5 Flash
+        'gemini-2.5-flash-lite',   // Gemini 2.5 Flash-Lite
+        'gemini-2.0-flash',        // Gemini 2.0 Flash
+        'gemini-2.0-flash-lite',   // Gemini 2.0 Flash-Lite
+        'gemini-flash-lite-latest', // Gemini Flash-Lite Latest
+        'gemini-1.5-flash',        // Fallback options
+        'gemini-1.5-pro',
+        'gemini-1.0-pro',
+        'gemini-pro'
+      ];
+      let lastError: any = null;
+      
+      for (const modelName of modelsToTry) {
+        try {
+          console.log(`Attempting Gemini API call with model: ${modelName}...`);
+          const model = this.gemini.getGenerativeModel({ model: modelName });
+          const geminiMessages = this.convertToGeminiFormat(messages);
+          const result = await model.generateContent({
+            contents: geminiMessages,
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 1000,
+            },
+          });
+          content = result.response.text();
+          console.log(`Gemini API call successful with ${modelName}`);
+          break; // Success, exit the loop
+        } catch (error: any) {
+          console.error(`Gemini API error with ${modelName}:`, error.message);
+          lastError = error;
+          // Continue to next model
+        }
+      }
+      
+      if (!content) {
+        // All models failed - provide helpful instructions
+        console.error('All Gemini models failed. Last error:', lastError);
+        content = `I couldn't connect to the Gemini API. Here's how to fix it:
+
+1. Go to https://aistudio.google.com
+2. Click on your API key or go to "Get API key"
+3. Make sure your API key has access to Gemini models
+4. In Google AI Studio, check that models are enabled for your project
+5. Try generating a new API key if needed
+
+Error details: ${lastError?.message || 'Unknown error'}
+
+If you just created the API key, it may take a few minutes to activate.`;
+      }
+    } else if (this.apiProvider === 'openai' && this.openai) {
+      try {
+        const completion = await this.openai.chat.completions.create({
+          model: 'gpt-4-turbo-preview',
+          messages: messages as any,
+          temperature: 0.7,
+          max_tokens: 1000,
+        });
+        content = completion.choices[0]?.message?.content ?? '';
+      } catch (error: any) {
+        console.error('OpenAI API error:', error);
+        content = 'I apologize, but I\'m having trouble connecting to the AI service right now. Please try again later.';
+      }
+    } else {
+      content = 'I\'d be happy to help! However, I need an AI API key configured to answer questions. Please set up GEMINI_API_KEY, OPENAI_API_KEY, or HUGGINGFACE_API_KEY in your environment variables.';
+    }
+
+    return {
+      content,
+      type: 'explanation',
+      shouldRevealAnswer: true,
+    };
   }
 
   /**
