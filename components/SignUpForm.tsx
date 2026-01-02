@@ -47,7 +47,12 @@ export default function SignUpForm() {
       router.push('/dashboard');
       router.refresh();
     } catch (error: any) {
-      setError(error.message || 'Failed to sign up');
+      // Better error handling for rate limits
+      if (error.message?.includes('rate limit') || error.message?.includes('too many')) {
+        setError('[ERROR: RATE_LIMIT_EXCEEDED] Please wait a few minutes before trying again. This usually happens during development when testing multiple times.');
+      } else {
+        setError(`[ERROR] ${error.message || 'Failed to sign up'}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -67,7 +72,11 @@ export default function SignUpForm() {
 
       if (error) throw error;
     } catch (error: any) {
-      setError(error.message || 'Failed to sign in with Google');
+      if (error.message?.includes('rate limit') || error.message?.includes('too many')) {
+        setError('[ERROR: RATE_LIMIT_EXCEEDED] Please wait a few minutes before trying again.');
+      } else {
+        setError(`[ERROR] ${error.message || 'Failed to sign in with Google'}`);
+      }
       setLoading(false);
     }
   };
